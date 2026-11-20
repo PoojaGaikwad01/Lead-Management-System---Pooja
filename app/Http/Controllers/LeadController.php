@@ -81,7 +81,7 @@ class LeadController extends Controller
 
         $window = $lead->replyWindow();
         if (! $window['open']) {
-            return back()->withInput()->withErrors(['body' => '24h window closed — free-text replies are disabled. Call or WhatsApp the customer, then use "Mark reply sent".']);
+            return back()->withInput($this->draft($body))->withErrors(['body' => '24h window closed — free-text replies are disabled. Call or WhatsApp the customer, then use "Mark reply sent".']);
         }
 
         try {
@@ -89,7 +89,7 @@ class LeadController extends Controller
         } catch (\Throwable $e) {
             report($e);
 
-            return back()->withInput()->withErrors(['body' => 'Could not send: '.Str::limit($e->getMessage(), 160)]);
+            return back()->withInput($this->draft($body))->withErrors(['body' => 'Could not send: '.Str::limit($e->getMessage(), 160)]);
         }
 
         $lead->messages()->create([
@@ -137,6 +137,12 @@ class LeadController extends Controller
         return $sent
             ? back()->with('status', "Reminder sent to {$sent} manager(s).")
             : back()->withErrors(['lead' => 'This branch has no active manager to remind.']);
+    }
+
+    /** Keep the typed reply after an error only if it's short — cookie sessions are capped at ~4 KB. */
+    private function draft(string $body): array
+    {
+        return mb_strlen($body) <= 500 ? ['body' => $body] : [];
     }
 
     private function activeBranch(Request $request): Branch

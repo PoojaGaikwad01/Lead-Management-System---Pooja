@@ -38,6 +38,16 @@ All lead-system settings are in `.env` and read through `config/leads.php`:
 - Webhooks are processed by the queue, so run a worker: `php artisan queue:work` (Supervisor/systemd in production).
 - Mock mode: `php artisan meta:replay` replays every fixture in `tests/fixtures/meta/` (Lead Ads FB/IG, Messenger, Instagram DM, WhatsApp text/document, agency text/Excel). Safe to re-run.
 
+## Deploy on Render (Docker)
+
+Render has no native PHP runtime, so the app ships as a Docker image (`Dockerfile`, `docker/`).
+
+- New → **Web Service** → connect this repo → **Runtime: Docker**, Root Directory blank, Dockerfile Path `./Dockerfile`, Docker Command blank, **Health Check Path `/up`**.
+- On every start, `docker/start.sh` caches config/routes/views, starts the queue worker + scheduler in the background (as www-data), and runs Apache on `0.0.0.0:$PORT`. It does **not** run migrations (tables already exist; run `php artisan migrate` manually when new migrations are added).
+- Environment: `APP_KEY` (`php artisan key:generate --show`), `APP_URL`, `APP_MODE`, and the database as `DB_HOST`, `DB_PORT`, `DB_DATABASE`, `DB_USERNAME`, `DB_PASSWORD` (don't also set `DATABASE_URL` — it would take precedence). Defaults set in the Dockerfile: `APP_ENV=production`, `APP_DEBUG=false`, `LOG_CHANNEL=stderr`, `SESSION_DRIVER=cookie`, `SESSION_SECURE_COOKIE=true`, `CACHE_STORE=file`, `DB_CONNECTION=pgsql`, `DB_SCHEMA=lms`, `DB_SSLMODE=require`.
+- Firebase JSON: add it as a Render **Secret File** and set `FIREBASE_CREDENTIALS_PATH=/etc/secrets/<file>.json`.
+- Free tier: the service sleeps after ~15 min idle (worker/scheduler pause too; Meta retries webhooks), and the disk is temporary (downloaded WhatsApp attachments are lost on restart).
+
 ## Background processes (production)
 
 - **Queue worker** — webhooks and reminder notifications: `php artisan queue:work` (keep alive with Supervisor/systemd).

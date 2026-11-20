@@ -1,0 +1,25 @@
+# Never send secrets, local data or rebuilt artifacts into the Docker build.
+.git
+.github
+.claude
+.env
+.env.*
+!.env.example
+node_modules
+vendor
+public/build
+public/hot
+bootstrap/cache/*.php
+**/*.sqlite
+**/*.sqlite-*
+**/*.sqlite3
+**/*.db
+**/*.log
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/private/*
+storage/app/public/*
+.phpunit.result.cache
+.phpunit.cache

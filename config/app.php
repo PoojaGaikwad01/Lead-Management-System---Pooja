@@ -52,7 +52,8 @@ return [
     |
     */
 
-    'url' => env('APP_URL', 'http://localhost'),
+    // On Render, RENDER_EXTERNAL_URL (set automatically) is used when APP_URL isn't set.
+    'url' => env('APP_URL', env('RENDER_EXTERNAL_URL', '')),
 
     /*
     |--------------------------------------------------------------------------

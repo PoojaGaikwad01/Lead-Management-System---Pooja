@@ -19,9 +19,14 @@ return Application::configure(basePath: dirname(__DIR__))
             'active' => \App\Http\Middleware\EnsureUserIsActive::class,
         ]);
         $middleware->redirectUsersTo('/inbox');
+        // Behind Render's (or any) HTTPS proxy: trust X-Forwarded-* so URLs, redirects and secure cookies use https.
+        $middleware->trustProxies(at: '*');
         $middleware->validateCsrfTokens(except: ['webhooks/*']); // belt and braces; webhooks aren't in the web group
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Cookie sessions are limited to ~4 KB: never flash a long reply body back on validation errors.
+        $exceptions->dontFlash(['body']);
+
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

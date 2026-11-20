@@ -6,6 +6,7 @@ Standalone Laravel 13 + PostgreSQL (Supabase) + Blade + Alpine + Tailwind v4 app
 - PostgreSQL on Supabase (session pooler, SSL `require`). Connection string only in `.env` `DATABASE_URL` (password URL-encoded, `@` → `%40`); never hardcode or print it. Don't run `php artisan db:show` (it prints the URL incl. password).
 - All app tables live in schema `lms` (`DB_SCHEMA`, pgsql `search_path`). `public` holds unrelated tables (users, leads, lead_activities) — never touch them, never `migrate:fresh` without checking the search_path.
 - Postgres specifics: use `whereLike()` for case-insensitive search (ILIKE); cast id filters to int; route ids are constrained to digits/UUIDs (AppServiceProvider).
+- Deploy: Render (Docker runtime). `Dockerfile` (php:8.3-apache + composer → node:20 assets → runtime), `docker/start.sh` (config/route/view cache, queue + scheduler as www-data in background, Apache on 0.0.0.0:$PORT; NO migrations), `docker/apache.conf`. Prod uses SESSION_DRIVER=cookie (keep session data tiny; reply drafts >500 chars aren't flashed), CACHE_STORE=file, LOG_CHANNEL=stderr. Proxies trusted + https forced in production; APP_URL falls back to RENDER_EXTERNAL_URL.
 - PHP needs `extension=pdo_pgsql` (enabled in the local winget php.ini; backup at php.ini.bak-before-pgsql). Tests stay on in-memory SQLite (forced in phpunit.xml).
 
 ## Local toolchain (Windows)
