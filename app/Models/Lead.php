@@ -147,11 +147,12 @@ class Lead extends Model
         $query
             ->when($f['source'] ?? null, fn ($q, $v) => $q->where('source', $v))
             ->when($f['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
-            ->when($f['branch_id'] ?? null, fn ($q, $v) => $v === 'none' ? $q->whereNull('branch_id') : $q->where('branch_id', $v))
+            ->when($f['branch_id'] ?? null, fn ($q, $v) => $v === 'none' ? $q->whereNull('branch_id') : $q->where('branch_id', (int) $v))
             ->when(trim($f['q'] ?? ''), function ($q, $term) {
                 $digits = ltrim(preg_replace('/\D/', '', $term), '0');
-                $q->where(fn ($w) => $w->where('name', 'like', "%{$term}%")
-                    ->when(strlen($digits) >= 3, fn ($w) => $w->orWhere('phone', 'like', "%{$digits}%")));
+                // whereLike = case-insensitive on every driver (ILIKE on PostgreSQL).
+                $q->where(fn ($w) => $w->whereLike('name', "%{$term}%")
+                    ->when(strlen($digits) >= 3, fn ($w) => $w->orWhereLike('phone', "%{$digits}%")));
             });
     }
 }

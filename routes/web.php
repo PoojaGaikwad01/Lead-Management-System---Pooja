@@ -39,7 +39,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     // In-app notification bell
     Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.count');
     Route::post('notifications/read-all', [NotificationController::class, 'readAll'])->name('notifications.read-all');
-    Route::get('notifications/{id}', [NotificationController::class, 'open'])->name('notifications.open');
+    Route::get('notifications/{id}', [NotificationController::class, 'open'])->whereUuid('id')->name('notifications.open');
 
     Route::middleware('role:admin')->group(function () {
         Route::patch('leads/{lead}', [LeadController::class, 'update'])->name('leads.update');

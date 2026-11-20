@@ -1,6 +1,12 @@
 # Funky Monkey Lead Management System
 
-Standalone Laravel 13 + MySQL + Blade + Alpine + Tailwind v4 app (leads.funkymonkey.in). Built in phases 1–6; build in order, don't refactor earlier phases unless required.
+Standalone Laravel 13 + PostgreSQL (Supabase) + Blade + Alpine + Tailwind v4 app (leads.funkymonkey.in). Built in phases 1–6; build in order, don't refactor earlier phases unless required.
+
+## Database
+- PostgreSQL on Supabase (session pooler, SSL `require`). Connection string only in `.env` `DATABASE_URL` (password URL-encoded, `@` → `%40`); never hardcode or print it. Don't run `php artisan db:show` (it prints the URL incl. password).
+- All app tables live in schema `lms` (`DB_SCHEMA`, pgsql `search_path`). `public` holds unrelated tables (users, leads, lead_activities) — never touch them, never `migrate:fresh` without checking the search_path.
+- Postgres specifics: use `whereLike()` for case-insensitive search (ILIKE); cast id filters to int; route ids are constrained to digits/UUIDs (AppServiceProvider).
+- PHP needs `extension=pdo_pgsql` (enabled in the local winget php.ini; backup at php.ini.bak-before-pgsql). Tests stay on in-memory SQLite (forced in phpunit.xml).
 
 ## Local toolchain (Windows)
 - PHP 8.3 (winget, not on PATH): `/c/Users/DELL2/AppData/Local/Microsoft/WinGet/Packages/PHP.PHP.NTS.8.3_Microsoft.Winget.Source_8wekyb3d8bbwe/php.exe`

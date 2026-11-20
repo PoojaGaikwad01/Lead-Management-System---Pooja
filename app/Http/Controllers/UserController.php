@@ -15,11 +15,11 @@ class UserController extends Controller
     {
         $users = User::with('branch:id,name')
             ->when($request->filled('q'), fn ($q) => $q->where(fn ($w) => $w
-                ->where('name', 'like', '%'.$request->q.'%')
-                ->orWhere('email', 'like', '%'.$request->q.'%')
-                ->orWhere('phone', 'like', '%'.$request->q.'%')))
+                ->whereLike('name', '%'.$request->q.'%')
+                ->orWhereLike('email', '%'.$request->q.'%')
+                ->orWhereLike('phone', '%'.$request->q.'%')))
             ->when($request->filled('role'), fn ($q) => $q->where('role', $request->role))
-            ->when($request->filled('branch_id'), fn ($q) => $q->where('branch_id', $request->branch_id))
+            ->when($request->filled('branch_id'), fn ($q) => $q->where('branch_id', (int) $request->branch_id))
             ->orderBy('name')
             ->paginate(25)
             ->withQueryString();

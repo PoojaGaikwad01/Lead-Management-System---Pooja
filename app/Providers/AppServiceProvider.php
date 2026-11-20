@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Services\Agency\Ai\AiLeadExtractor;
 use App\Services\Agency\Ai\NullAiLeadExtractor;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -25,6 +26,9 @@ class AppServiceProvider extends ServiceProvider
 
     public function boot(): void
     {
-        //
+        // Numeric ids only: on PostgreSQL a non-numeric id would be a query error (500) instead of a 404.
+        foreach (['lead', 'user', 'branch', 'message'] as $param) {
+            Route::pattern($param, '[0-9]+');
+        }
     }
 }

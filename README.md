@@ -2,15 +2,16 @@
 
 Standalone lead inbox for Funky Monkey (leads.funkymonkey.in). Leads from Meta (Lead Ads, Messenger, Instagram, WhatsApp) and agencies are assigned to branches; Branch Managers reply; Admin sends reminders and views reports.
 
-**Stack:** Laravel 13 · MySQL 8 · Blade · Alpine.js · Tailwind v4 · database queue + scheduler.
+**Stack:** Laravel 13 · PostgreSQL (Supabase) · Blade · Alpine.js · Tailwind v4 · database queue + scheduler.
 
 ## Setup
 
 ```bash
 composer install
 npm install && npm run build
-cp .env.example .env          # set DB_* (MySQL); APP_MODE=mock needs no Meta/AI keys
+cp .env.example .env          # set DATABASE_URL (Postgres/Supabase); APP_MODE=mock needs no Meta/AI keys
 php artisan key:generate
+# once per database:  CREATE SCHEMA IF NOT EXISTS lms;   (app tables live in schema "lms")
 php artisan migrate --seed
 php artisan serve
 ```

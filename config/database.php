@@ -86,7 +86,8 @@ return [
 
         'pgsql' => [
             'driver' => 'pgsql',
-            'url' => env('DB_URL'),
+            // Supabase: full connection string from DATABASE_URL (never hardcoded).
+            'url' => env('DATABASE_URL', env('DB_URL')),
             'host' => env('DB_HOST', '127.0.0.1'),
             'port' => env('DB_PORT', '5432'),
             'database' => env('DB_DATABASE', 'laravel'),
@@ -95,8 +96,10 @@ return [
             'charset' => env('DB_CHARSET', 'utf8'),
             'prefix' => '',
             'prefix_indexes' => true,
-            'search_path' => 'public',
-            'sslmode' => env('DB_SSLMODE', 'prefer'),
+            // Own schema: keeps app tables away from other tables in "public" and out of Supabase's auto-exposed REST API.
+            // Create it once before migrating: CREATE SCHEMA IF NOT EXISTS lms;
+            'search_path' => env('DB_SCHEMA', 'lms'),
+            'sslmode' => env('DB_SSLMODE', 'require'), // Supabase requires SSL
         ],
 
         'sqlsrv' => [

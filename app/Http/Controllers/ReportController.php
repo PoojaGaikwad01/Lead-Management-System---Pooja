@@ -84,7 +84,7 @@ class ReportController extends Controller
         $query = Lead::visibleTo($request->user())
             ->whereBetween('leads.created_at', [$from, $to])
             ->when($data['source'] ?? null, fn ($q, $v) => $q->where('source', $v))
-            ->when($branch, fn ($q, $v) => $v === 'none' ? $q->whereNull('branch_id') : $q->where('branch_id', $v));
+            ->when($branch, fn ($q, $v) => $v === 'none' ? $q->whereNull('branch_id') : $q->where('branch_id', (int) $v));
 
         return [$query, $from, $to];
     }
