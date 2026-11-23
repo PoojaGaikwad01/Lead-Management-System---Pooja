@@ -18,11 +18,14 @@
     ]);
 @endphp
 
+{{-- Phones show one pane at a time (the list is hidden while a lead is open): a clear way back to it --}}
+<a href="{{ route('inbox', request()->query()) }}" class="flex items-center gap-1 border-b border-slate-200 bg-white px-3 py-2 text-sm font-medium text-orange-700 hover:bg-orange-50 sm:hidden">
+    <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
+    All leads
+</a>
+
 {{-- Header --}}
 <header class="flex items-center gap-3 border-b border-slate-200 bg-white px-3 py-2.5">
-    <a href="{{ route('inbox', request()->query()) }}" class="-ml-1 rounded-lg p-2 text-slate-600 hover:bg-slate-100 md:hidden" aria-label="Back to list">
-        <svg class="size-5" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5"/></svg>
-    </a>
     <x-lead-avatar :lead="$lead" />
     <div class="min-w-0 flex-1">
         <div class="truncate font-semibold">{{ $lead->display_name }}</div>

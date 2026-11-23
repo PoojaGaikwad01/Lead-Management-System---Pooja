@@ -10,12 +10,12 @@
 <x-layouts.app title="Inbox" :flush="true">
 <div class="flex h-full">
 
-    {{-- ===== Lead list (hidden on mobile when a lead is open) ===== --}}
+    {{-- ===== Lead list: side by side with the lead from 640px (sm); on phones hidden while a lead is open ===== --}}
     {{-- #inbox-live: resources/js/inbox-live.js polls inbox.updates and refreshes the [data-live-region] parts. --}}
     <section id="inbox-live" x-data="{ selected: [] }"
              data-updates-url="{{ route('inbox.updates') }}" data-latest-id="{{ $latestId }}"
              @if ($googleDemo) data-sample-url="{{ route('google.sample') }}" @endif
-             @class(['w-full flex-col border-r border-slate-200 bg-white md:flex md:w-96 md:shrink-0', 'hidden' => $lead, 'flex' => ! $lead])>
+             @class(['w-full flex-col border-r border-slate-200 bg-white sm:flex sm:w-72 sm:shrink-0 md:w-96', 'hidden' => $lead, 'flex' => ! $lead])>
         <div class="space-y-2 border-b border-slate-200 p-3">
             @if ($googleDemo)
                 {{-- Demo: posts a Google-format lead to /webhooks/google-leads, exactly like Google Ads does --}}
@@ -152,7 +152,7 @@
     <div id="toasts" aria-live="polite" class="pointer-events-none fixed inset-x-3 bottom-3 z-50 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-5 sm:bottom-5"></div>
 
     {{-- ===== Thread (hidden on mobile when no lead is open) ===== --}}
-    <section @class(['min-w-0 flex-1 flex-col bg-slate-100 md:flex', 'flex' => $lead, 'hidden' => ! $lead])>
+    <section @class(['min-w-0 flex-1 flex-col bg-slate-100 sm:flex', 'flex' => $lead, 'hidden' => ! $lead])>
         @if ($lead)
             @include('inbox._thread')
         @else
