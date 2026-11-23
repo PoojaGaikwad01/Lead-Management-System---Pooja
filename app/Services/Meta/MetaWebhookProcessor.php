@@ -28,7 +28,7 @@ class MetaWebhookProcessor
                 'page' => $this->page($entry),
                 'instagram' => $this->messaging($entry, LeadSource::IgDm),
                 'whatsapp_business_account' => $this->whatsapp($entry),
-                default => Log::info('Meta webhook: unhandled object', ['object' => $object]),
+                default => Log::channel('meta')->info('Webhook ignored: unhandled object', ['object' => $object]),
             };
         }
     }

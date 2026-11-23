@@ -41,6 +41,7 @@ Standalone Laravel 13 + PostgreSQL (Supabase) + Blade + Alpine + Tailwind v4 app
 - `App\Services\Meta\MetaClient`: Graph GETs + WhatsApp media download. Mock mode reads `tests/fixtures/meta/graph/{id}.json` and `tests/fixtures/meta/media/{filename}`. Attachments: private disk path (`media/whatsapp/{media_id}/{file}`) or Meta CDN URL; served via `attachments.show` (policy-checked).
 - WhatsApp phones: always `'+'.$wa_id` before normalizing. Agency = sender in `config('leads.agency_numbers')` → `App\Services\Agency\AgencyParser::handle()`.
 - Fixtures: `tests/fixtures/meta/*.json` with `__NOW__` / `__NOW_MS__` tokens; `php artisan meta:replay [names] [--queue]` (mock only).
+- Live-test tools: `meta:simulate-webhook {fixture} [--url]` (signed HTTP POST), `meta:send-test {to} [message] [--template=]` (always real Cloud API). Log channel `meta` (`LOG_META_PATH`, default storage/logs/meta.log): ids/object only, never content.
 
 ## Agency parsing (Phase 4+)
 - `AgencyParser` → `SpreadsheetLeadReader` (xlsx/xls/csv/ods via phpoffice/phpspreadsheet; header row found in first 10 rows) or `TextLeadExtractor` (regex `PHONE`, labels Name:/City:). One lead + message copy per candidate, ids `{wamid}#n`; nothing usable → one needs_review lead with id `{wamid}`. Whole message in one DB transaction.

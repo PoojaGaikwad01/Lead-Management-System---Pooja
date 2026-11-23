@@ -36,7 +36,9 @@ All lead-system settings are in `.env` and read through `config/leads.php`:
 
 - Callback URL: `https://leads.funkymonkey.in/webhooks/meta` — verify token = `META_VERIFY_TOKEN`; subscribe the Page to `leadgen` + `messages`, the Instagram account to `messages`, and the WhatsApp Business Account to `messages`.
 - Webhooks are processed by the queue, so run a worker: `php artisan queue:work` (Supervisor/systemd in production).
-- Mock mode: `php artisan meta:replay` replays every fixture in `tests/fixtures/meta/` (Lead Ads FB/IG, Messenger, Instagram DM, WhatsApp text/document, agency text/Excel). Safe to re-run.
+- Mock mode: `php artisan meta:replay` replays every fixture in `tests/fixtures/meta/` (Lead Ads FB/IG, Messenger, Instagram DM, WhatsApp text/document/status, agency text/Excel). Safe to re-run.
+- Live testing: `php artisan meta:simulate-webhook whatsapp_text [--url=…]` posts a fixture to the endpoint with a valid signature; `php artisan meta:send-test 91XXXXXXXXXX [message] [--template=hello_world]` sends a real WhatsApp message and prints Meta's response.
+- Every webhook is logged (object type + message ids only) to `storage/logs/meta.log` (stderr on Render).
 
 ## Deploy on Render (Docker)
 

@@ -43,7 +43,8 @@ ENV PORT=80 \
     CACHE_STORE=file \
     DB_CONNECTION=pgsql \
     DB_SCHEMA=lms \
-    DB_SSLMODE=require
+    DB_SSLMODE=require \
+    LOG_META_PATH=php://stderr
 
 EXPOSE 80
 CMD ["start"]
