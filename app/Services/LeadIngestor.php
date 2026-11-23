@@ -27,7 +27,7 @@ class LeadIngestor
 
     public function leadAdExists(string $leadgenId): bool
     {
-        return Lead::whereIn('source', [LeadSource::FbLeadAd, LeadSource::IgLeadAd])->where('external_id', $leadgenId)->exists()
+        return Lead::whereIn('source', LeadSource::leadAds())->where('external_id', $leadgenId)->exists()
             || $this->alreadyProcessed("leadgen:{$leadgenId}");
     }
 

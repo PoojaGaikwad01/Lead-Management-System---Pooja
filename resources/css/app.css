@@ -22,4 +22,15 @@
     .table { @apply w-full text-left text-sm; }
     .table th { @apply bg-slate-50 px-4 py-2.5 text-xs font-semibold tracking-wide text-slate-500 uppercase; }
     .table td { @apply border-t border-slate-100 px-4 py-3 align-middle; }
+    .toast { @apply pointer-events-auto w-full max-w-sm rounded-xl border-l-4 border-orange-500 bg-white px-4 py-3 text-sm shadow-lg ring-1 ring-slate-200; }
+}
+
+/* Inbox live updates: a lead that just arrived glows briefly (resources/js/inbox-live.js). */
+@keyframes lead-flash {
+    0%, 35% { background-color: #fed7aa; }
+    100% { background-color: transparent; }
+}
+.lead-new { animation: lead-flash 6s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+    .lead-new { animation: none; background-color: #ffedd5; }
 }

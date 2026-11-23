@@ -40,6 +40,32 @@ All lead-system settings are in `.env` and read through `config/leads.php`:
 - Live testing: `php artisan meta:simulate-webhook whatsapp_text [--url=…]` posts a fixture to the endpoint with a valid signature; `php artisan meta:send-test 91XXXXXXXXXX [message] [--template=hello_world]` sends a real WhatsApp message and prints Meta's response.
 - Every webhook is logged (object type + message ids only) to `storage/logs/meta.log` (stderr on Render).
 
+## Google Ads lead forms
+
+Google Ads lead-form leads come in like Facebook/Instagram Lead Ads. They show in the inbox with a red **Google** badge and the full form answers, and they can be assigned, reminded and reported on like any other lead.
+
+**Connecting Google Ads:**
+1. Set `GOOGLE_LEAD_KEY` to a long random secret: `php -r "echo bin2hex(random_bytes(24)), PHP_EOL;"`
+2. In Google Ads, open the campaign's lead form → **Lead delivery** → **Webhook integration**:
+   - **Webhook URL:** `https://leads.funkymonkey.in/webhooks/google-leads`
+   - **Key:** the same value as `GOOGLE_LEAD_KEY`
+3. Click **Send test data**. A lead with a **Test** badge appears in the inbox. If it doesn't, check the Google lines in `storage/logs/meta.log` (on Render, the stderr logs).
+
+**How the webhook behaves:**
+- Each lead is processed straight away (no queue) and Google gets `200 {}`.
+- A wrong or missing key gets `401`. In mock mode an empty `GOOGLE_LEAD_KEY` is allowed.
+- The same `lead_id` delivered twice is stored once.
+- If the phone number already belongs to a lead active in the last `DEDUPE_DAYS`, the form answers are added to that lead as a message instead of creating a new lead.
+- Big Google IDs are kept exactly (stored as text).
+- `google_key` is never saved.
+
+**Demo without Google:**
+- `php artisan google:send-sample [--count=5] [--test] [--key=wrong] [--url=…]` posts leads in Google's exact JSON format to the webhook. The app must be running.
+- Admins also see a **Send sample Google lead** button at the top of the inbox list. It shows when `APP_MODE=mock`, or when you set `GOOGLE_DEMO_TOOLS=true`. The browser posts the sample to `/webhooks/google-leads`, the same request Google makes.
+- The inbox checks for new leads every 5 seconds. New ones appear on their own, highlighted, with a notification.
+- Sample leads have a `lead_id` starting with `sample-`. **Clear samples** (or `php artisan google:clear-samples`) deletes only those. Real leads are never touched.
+- Edit the sample form questions in `app/Services/Google/SampleGoogleLead.php`.
+
 ## Deploy on Render (Docker)
 
 Render has no native PHP runtime, so the app ships as a Docker image (`Dockerfile`, `docker/`).

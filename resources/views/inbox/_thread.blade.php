@@ -1,7 +1,6 @@
 @php
     use App\Support\Format;
-    $fields = collect($lead->raw_payload['field_data'] ?? [])
-        ->map(fn ($f) => ['name' => ucfirst(str_replace('_', ' ', $f['name'] ?? '')), 'value' => implode(', ', (array) ($f['values'] ?? []))]);
+    $fields = collect($lead->formAnswers()); // Meta field_data or Google user_column_data
     $details = array_filter([
         'Phone' => $lead->phone,
         'Email' => $lead->email,
@@ -32,6 +31,7 @@
             · {{ $lead->source->label() }}
         </div>
     </div>
+    @if ($lead->isTest())<span class="badge bg-purple-100 text-purple-700" title="Sent with Google Ads &quot;Send test data&quot;">Test</span>@endif
     <span class="badge {{ $lead->status->color() }}">{{ $lead->status->label() }}</span>
 </header>
 

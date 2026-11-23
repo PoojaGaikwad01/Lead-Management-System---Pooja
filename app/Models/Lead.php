@@ -5,7 +5,9 @@ namespace App\Models;
 use App\Enums\LeadSource;
 use App\Enums\LeadStatus;
 use App\Models\Concerns\BelongsToBranch;
+use App\Services\Google\GoogleLeadProcessor;
 use App\Support\Phone;
+use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -45,7 +47,7 @@ class Lead extends Model
      * Who/where a free-text reply goes, and whether the 24h customer-service window is open.
      * Based on the customer's latest inbound chat message — never on agency forwards or lead-ad summaries.
      *
-     * @return array{channel: ?string, recipient: ?string, open: bool, closes_at: ?\Carbon\CarbonInterface}
+     * @return array{channel: ?string, recipient: ?string, open: bool, closes_at: ?CarbonInterface}
      */
     public function replyWindow(): array
     {
@@ -137,6 +139,28 @@ class Lead extends Model
             return collect(preg_split('/\s+/', trim($this->name)))->take(2)
                 ->map(fn ($w) => mb_strtoupper(mb_substr($w, 0, 1)))->join('');
         });
+    }
+
+    /**
+     * Lead form answers as [['name' => …, 'value' => …]] — Meta (field_data) or Google (user_column_data).
+     */
+    public function formAnswers(): array
+    {
+        $payload = $this->raw_payload ?? [];
+
+        if (isset($payload['user_column_data'])) {
+            return GoogleLeadProcessor::answerRows($payload);
+        }
+
+        return collect($payload['field_data'] ?? [])
+            ->map(fn ($f) => ['name' => ucfirst(str_replace('_', ' ', $f['name'] ?? '')), 'value' => implode(', ', (array) ($f['values'] ?? []))])
+            ->all();
+    }
+
+    /** Google "Send test data" leads (is_test = true in the webhook body). */
+    public function isTest(): bool
+    {
+        return $this->source === LeadSource::GoogleLeadAd && filter_var($this->raw_payload['is_test'] ?? false, FILTER_VALIDATE_BOOLEAN);
     }
 
     // --- Scopes ---

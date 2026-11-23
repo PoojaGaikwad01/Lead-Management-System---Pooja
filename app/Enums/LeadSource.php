@@ -10,6 +10,7 @@ enum LeadSource: string
     case IgDm = 'ig_dm';
     case WhatsappCustomer = 'whatsapp_customer';
     case WhatsappAgency = 'whatsapp_agency';
+    case GoogleLeadAd = 'google_lead_ad'; // Google Ads lead form (webhook)
 
     public function label(): string
     {
@@ -20,6 +21,7 @@ enum LeadSource: string
             self::IgDm => 'Instagram DM',
             self::WhatsappCustomer => 'WhatsApp',
             self::WhatsappAgency => 'Agency (WhatsApp)',
+            self::GoogleLeadAd => 'Google Ads Lead Form',
         };
     }
 
@@ -32,6 +34,7 @@ enum LeadSource: string
             self::IgDm => 'IG DM',
             self::WhatsappCustomer => 'WhatsApp',
             self::WhatsappAgency => 'Agency',
+            self::GoogleLeadAd => 'Google',
         };
     }
 
@@ -44,6 +47,7 @@ enum LeadSource: string
             self::IgDm => 'bg-fuchsia-100 text-fuchsia-700',
             self::WhatsappCustomer => 'bg-green-100 text-green-700',
             self::WhatsappAgency => 'bg-teal-100 text-teal-700',
+            self::GoogleLeadAd => 'bg-red-100 text-red-700',
         };
     }
 
@@ -51,7 +55,7 @@ enum LeadSource: string
     public function channel(): ?string
     {
         return match ($this) {
-            self::FbLeadAd, self::IgLeadAd => null,
+            self::FbLeadAd, self::IgLeadAd, self::GoogleLeadAd => null,
             self::Messenger => 'messenger',
             self::IgDm => 'instagram',
             self::WhatsappCustomer, self::WhatsappAgency => 'whatsapp',
@@ -61,5 +65,11 @@ enum LeadSource: string
     public function isLeadAd(): bool
     {
         return $this->channel() === null;
+    }
+
+    /** @return list<self> Form-based sources (Meta + Google Lead Ads). */
+    public static function leadAds(): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $s) => $s->isLeadAd()));
     }
 }

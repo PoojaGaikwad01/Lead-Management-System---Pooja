@@ -5,13 +5,30 @@
     $isAdmin = auth()->user()->isAdmin();
     $query = request()->except('page');
     $hasExtraFilters = request()->filled('source') || request()->filled('branch_id');
+    $googleDemo = $isAdmin && config('leads.google.demo_tools');
 @endphp
 <x-layouts.app title="Inbox" :flush="true">
 <div class="flex h-full">
 
     {{-- ===== Lead list (hidden on mobile when a lead is open) ===== --}}
-    <section x-data="{ selected: [] }" @class(['w-full flex-col border-r border-slate-200 bg-white md:flex md:w-96 md:shrink-0', 'hidden' => $lead, 'flex' => ! $lead])>
+    {{-- #inbox-live: resources/js/inbox-live.js polls inbox.updates and refreshes the [data-live-region] parts. --}}
+    <section id="inbox-live" x-data="{ selected: [] }"
+             data-updates-url="{{ route('inbox.updates') }}" data-latest-id="{{ $latestId }}"
+             @if ($googleDemo) data-sample-url="{{ route('google.sample') }}" @endif
+             @class(['w-full flex-col border-r border-slate-200 bg-white md:flex md:w-96 md:shrink-0', 'hidden' => $lead, 'flex' => ! $lead])>
         <div class="space-y-2 border-b border-slate-200 p-3">
+            @if ($googleDemo)
+                {{-- Demo: posts a Google-format lead to /webhooks/google-leads, exactly like Google Ads does --}}
+                <div class="flex items-center gap-2 rounded-lg bg-red-50 px-2 py-1.5">
+                    <button type="button" id="send-sample-google" class="btn btn-secondary flex-1 px-2 py-1 text-xs">
+                        <span class="font-bold text-red-600">G</span> <span data-label>Send sample Google lead</span>
+                    </button>
+                    <form method="POST" action="{{ route('google.samples.clear') }}" onsubmit="return confirm('Delete all sample Google leads? Real leads are not touched.')">
+                        @csrf @method('DELETE')
+                        <button class="px-1 text-xs text-slate-500 hover:text-rose-600 hover:underline">Clear samples</button>
+                    </form>
+                </div>
+            @endif
             <form method="GET" action="{{ route('inbox') }}" x-data="{ open: @js($hasExtraFilters) }">
                 @if (request()->filled('status')) <input type="hidden" name="status" value="{{ request('status') }}"> @endif
                 <div class="flex gap-2">
@@ -40,7 +57,7 @@
             </form>
 
             {{-- Status chips with counts --}}
-            <div class="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-0.5 scrollbar-none">
+            <div id="status-chips" data-live-region class="-mx-3 flex gap-1.5 overflow-x-auto px-3 pb-0.5 scrollbar-none">
                 @php($chips = [null => 'All'] + collect(LeadStatus::cases())->mapWithKeys(fn ($s) => [$s->value => $s->label()])->all())
                 @foreach ($chips as $value => $label)
                     @php($active = (string) request('status') === (string) $value)
@@ -53,23 +70,24 @@
                 @endforeach
             </div>
 
-            @if ($isAdmin && $leads->isNotEmpty())
+            {{-- No whitespace outside @if: an empty wrapper must match :empty --}}
+            <div id="select-all" data-live-region class="empty:hidden">@if ($isAdmin && $leads->isNotEmpty())
                 <label class="flex items-center gap-2 text-xs text-slate-500">
                     <input type="checkbox" class="rounded border-slate-300 text-orange-600"
                            :checked="selected.length === {{ $leads->count() }}"
                            @change="selected = $event.target.checked ? @js($leads->pluck('id')->map(fn ($id) => (string) $id)) : []">
                     Select all on this page (for bulk assign)
                 </label>
-            @endif
+            @endif</div>
         </div>
 
         @unless ($lead)
             <div class="px-3 pt-3 empty:hidden"><x-flash /></div>
         @endunless
 
-        <div class="flex-1 divide-y divide-slate-100 overflow-y-auto">
+        <div id="lead-list" data-live-region class="flex-1 divide-y divide-slate-100 overflow-y-auto">
             @forelse ($leads as $item)
-                <div @class(['flex', 'bg-orange-50' => $lead?->id === $item->id, 'hover:bg-slate-50' => $lead?->id !== $item->id])>
+                <div data-lead-id="{{ $item->id }}" @class(['flex', 'bg-orange-50' => $lead?->id === $item->id, 'hover:bg-slate-50' => $lead?->id !== $item->id])>
                 @if ($isAdmin)
                     <label class="flex cursor-pointer items-center pl-3">
                         <input type="checkbox" value="{{ $item->id }}" x-model="selected" class="rounded border-slate-300 text-orange-600" aria-label="Select {{ $item->display_name }}">
@@ -87,6 +105,7 @@
                         </p>
                         <div class="mt-1 flex flex-wrap items-center gap-1">
                             <span class="badge {{ $item->source->color() }}">{{ $item->source->short() }}</span>
+                            @if ($item->isTest())<span class="badge bg-purple-100 text-purple-700">Test</span>@endif
                             <span class="badge {{ $item->status->color() }}">{{ $item->status->label() }}</span>
                             @if ($isAdmin)
                                 <span class="truncate text-xs text-slate-400">· {{ $item->branch?->name ?? 'Unassigned' }}</span>
@@ -120,14 +139,17 @@
             </form>
         @endif
 
-        @if ($leads->hasPages())
+        <div id="list-pager" data-live-region>@if ($leads->hasPages())
             <div class="flex items-center justify-between border-t border-slate-200 px-3 py-2 text-sm">
                 <a href="{{ $leads->previousPageUrl() }}" @class(['btn btn-secondary px-3 py-1', 'pointer-events-none opacity-40' => $leads->onFirstPage()])>‹ Prev</a>
                 <span class="text-xs text-slate-500">{{ $leads->firstItem() }}–{{ $leads->lastItem() }} of {{ $leads->total() }}</span>
                 <a href="{{ $leads->nextPageUrl() }}" @class(['btn btn-secondary px-3 py-1', 'pointer-events-none opacity-40' => ! $leads->hasMorePages()])>Next ›</a>
             </div>
-        @endif
+        @endif</div>
     </section>
+
+    {{-- New-lead notifications (filled by inbox-live.js with textContent only) --}}
+    <div id="toasts" aria-live="polite" class="pointer-events-none fixed inset-x-3 bottom-3 z-50 flex flex-col items-end gap-2 sm:inset-x-auto sm:right-5 sm:bottom-5"></div>
 
     {{-- ===== Thread (hidden on mobile when no lead is open) ===== --}}
     <section @class(['min-w-0 flex-1 flex-col bg-slate-100 md:flex', 'flex' => $lead, 'hidden' => ! $lead])>

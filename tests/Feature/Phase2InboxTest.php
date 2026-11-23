@@ -19,8 +19,8 @@ class Phase2InboxTest extends TestCase
     {
         $this->seed();
 
-        $this->assertSame(30, Lead::count());
-        $this->assertCount(6, Lead::distinct()->pluck('source'));
+        $this->assertSame(35, Lead::count()); // 30 Meta/WhatsApp + 5 Google Ads lead forms
+        $this->assertCount(7, Lead::distinct()->pluck('source'));
         $this->assertSame(2, Lead::where('status', LeadStatus::NeedsReview)->count());
         $this->assertGreaterThan(30, Message::count());
         // Chat leads have messages; lead ads don't.

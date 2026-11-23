@@ -9,11 +9,26 @@ use App\Models\Branch;
 use App\Models\Lead;
 use App\Models\Message;
 use App\Models\User;
+use App\Services\Google\GoogleLeadProcessor;
+use App\Services\Google\SampleGoogleLead;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Collection;
 
-/** 30 mock leads (5 per source) with short conversations. Runs only when the leads table is empty. */
+/**
+ * 30 mock leads (5 per Meta/WhatsApp source) with short conversations + 5 Google Ads lead-form leads.
+ * Runs only when the leads table is empty.
+ */
 class LeadSeeder extends Seeder
 {
+    // Google Ads lead forms: [name, phone, city, status]. #5 is a Google "Send test data" lead.
+    private const GOOGLE = [
+        ['Priya Deshmukh', '9823011101', 'Nashik', 'new'],
+        ['Rahul Kulkarni', '9823011102', 'Pune', 'new'],
+        ['Sneha Patil', '9823011103', 'Mumbai', 'assigned'],
+        ['Amit Joshi', '9823011104', 'Thane', 'reply_sent'],
+        ['Google Test Lead', '9823011105', 'Pune', 'new'],
+    ];
+
     private const NAMES = [
         'Aarav Sharma', 'Diya Kapoor', 'Vihaan Joshi', 'Ananya Iyer', 'Kabir Malhotra', 'Ishita Desai',
         'Reyansh Gupta', 'Myra Nair', 'Aditya Kulkarni', 'Saanvi Reddy', 'Arnav Bhatt', 'Kiara Shah',
@@ -43,7 +58,8 @@ class LeadSeeder extends Seeder
         $admin = User::where('role', Role::Admin)->first();
         $branches = Branch::orderBy('id')->get();
         $managers = User::where('role', Role::BranchManager)->get()->keyBy('branch_id');
-        $sources = LeadSource::cases();
+        // Google leads are seeded separately below, so this rotation (and agency leads #11/#23) stays unchanged.
+        $sources = array_values(array_filter(LeadSource::cases(), fn (LeadSource $s) => $s !== LeadSource::GoogleLeadAd));
 
         foreach (self::NAMES as $i => $name) {
             $source = $sources[$i % count($sources)];
@@ -107,6 +123,30 @@ class LeadSeeder extends Seeder
                 $firstReply = $lead->messages()->where('direction', 'out')->min('created_at');
                 $lead->forceFill(['replied_at' => $firstReply ?? $at->copy()->addMinutes(25 + ($i * 13) % 180)])->save();
             }
+        }
+
+        $this->seedGoogleLeads($admin, $branches);
+    }
+
+    /** Built from real-format Google webhook bodies, parsed by the same GoogleLeadProcessor the webhook uses. */
+    private function seedGoogleLeads(?User $admin, Collection $branches): void
+    {
+        foreach (self::GOOGLE as $n => [$name, $phone, $city, $status]) {
+            $at = now()->subHours(40 - $n * 9)->startOfMinute();
+            $payload = SampleGoogleLead::payload(['name' => $name, 'phone' => '+91'.$phone, 'city' => $city], $at, isTest: $n === 4, leadId: 'mock-google-'.($n + 1));
+            $status = LeadStatus::from($status);
+            $branch = $status === LeadStatus::New || $branches->isEmpty() ? null : $branches[$n % $branches->count()];
+
+            $lead = new Lead(GoogleLeadProcessor::attributes($payload) + ['source' => LeadSource::GoogleLeadAd, 'external_id' => $payload['lead_id']]);
+            $lead->fill([
+                'status' => $branch ? $status : LeadStatus::New,
+                'branch_id' => $branch?->id,
+                'assigned_by' => $branch ? $admin?->id : null,
+                'assigned_at' => $branch ? $at->copy()->addMinutes(10) : null,
+                'replied_at' => $branch && $status === LeadStatus::ReplySent ? $at->copy()->addMinutes(40) : null,
+            ]);
+            $lead->created_at = $lead->updated_at = $at;
+            $lead->save();
         }
     }
 

@@ -1,0 +1,19 @@
+{
+    "lead_id": "TeSter-123-ABCDEFGHIJKLMNOPQRSTUVWXYZ-abcdefghijklmnopqrstuvwxyz-0123456789",
+    "user_column_data": [
+        { "column_name": "Full Name", "string_value": "Priya Sharma", "column_id": "FULL_NAME" },
+        { "column_name": "User Phone", "string_value": "+919876543210", "column_id": "PHONE_NUMBER" },
+        { "column_name": "User Email", "string_value": "Priya.Sharma@Gmail.com", "column_id": "EMAIL" },
+        { "column_name": "City", "string_value": "Nashik", "column_id": "CITY" },
+        { "column_name": "Which service are you interested in?", "string_value": "Website Development", "column_id": "SERVICE" }
+    ],
+    "api_version": "1.0",
+    "form_id": 40000000000,
+    "campaign_id": 20000000000,
+    "google_key": "test-google-key",
+    "is_test": false,
+    "gcl_id": "TeSter-gclid-123",
+    "adgroup_id": 20000000001,
+    "creative_id": 30000000000,
+    "lead_submit_time": "2026-11-20T06:30:00Z"
+}

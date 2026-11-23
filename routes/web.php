@@ -4,10 +4,11 @@ use App\Http\Controllers\AttachmentController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\BranchController;
 use App\Http\Controllers\DeviceTokenController;
-use App\Http\Controllers\NotificationController;
-use App\Http\Controllers\ReportController;
+use App\Http\Controllers\GoogleDemoController;
 use App\Http\Controllers\InboxController;
 use App\Http\Controllers\LeadController;
+use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -22,6 +23,7 @@ Route::middleware(['auth', 'active'])->group(function () {
 
     Route::get('/', fn () => redirect()->route('inbox'));
     Route::get('inbox', [InboxController::class, 'index'])->name('inbox');
+    Route::get('inbox/updates', [InboxController::class, 'updates'])->name('inbox.updates'); // live new-lead polling
     Route::get('inbox/{lead}', [InboxController::class, 'show'])->whereNumber('lead')->name('inbox.show');
     Route::get('attachments/{message}', [AttachmentController::class, 'show'])->name('attachments.show');
 
@@ -46,6 +48,10 @@ Route::middleware(['auth', 'active'])->group(function () {
         Route::post('leads/bulk-assign', [LeadController::class, 'bulkAssign'])->name('leads.bulk-assign');
         Route::post('leads/{lead}/assign', [LeadController::class, 'assign'])->name('leads.assign');
         Route::post('leads/{lead}/remind', [LeadController::class, 'remind'])->name('leads.remind');
+
+        // Google Ads demo tools (404 unless leads.google.demo_tools)
+        Route::post('google/sample-lead', [GoogleDemoController::class, 'sampleLead'])->name('google.sample');
+        Route::delete('google/sample-leads', [GoogleDemoController::class, 'clearSamples'])->name('google.samples.clear');
 
         Route::resource('branches', BranchController::class)->except('show');
         Route::post('branches/{branch}/managers', [BranchController::class, 'assignManager'])->name('branches.managers.store');

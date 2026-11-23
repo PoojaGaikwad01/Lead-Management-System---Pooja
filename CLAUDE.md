@@ -63,3 +63,21 @@ Standalone Laravel 13 + PostgreSQL (Supabase) + Blade + Alpine + Tailwind v4 app
 - Bell in the layout (`notifications.*` routes, polls unread count every 60s). Device tokens: `POST/DELETE /device-tokens` (session + CSRF).
 - `ReportController`: filters from/to (lead created_at, default last 30 days), source, branch (admin); totals/by source/branch/status/day computed in PHP; CSV via `streamDownload` with BOM + formula-injection guard.
 - Windows PHP can't `openssl_pkey_new()` without a config file — tests pass a minimal temp cnf.
+
+## Google Ads lead forms
+- Source: `LeadSource::GoogleLeadAd` (`google_lead_ad`). It's a Lead Ad: `channel()` is null and there's no chat thread. `LeadSource::leadAds()` lists Meta + Google. No migration was needed (`source` is a string column).
+- Webhook: `POST webhooks/google-leads` (`routes/webhooks.php`) → `GoogleLeadWebhookController`.
+  - Checks `google_key` in the body with `hash_equals` against `leads.google.lead_key` → 401. An empty key is allowed only when not live, same rule as the Meta signature.
+  - Processed synchronously (the body has the whole lead) by `Services\Google\GoogleLeadProcessor` → `LeadIngestor::ingestLeadAd()`. Same idempotency and phone dedupe as Meta; a duplicate becomes a `lead_ad` message `leadgen:{lead_id}`.
+  - Responds `200 {}`.
+- Parsing:
+  - `GoogleLeadProcessor::decode()` uses `JSON_BIGINT_AS_STRING`.
+  - `attributes()` reads `user_column_data` by `column_id`. The webhook has no names, so it sets `campaign_name` = "Google campaign {id}", `form_name` = "Google form {id}", `ad_name` = "Ad group {id}".
+  - `google_key` is stripped from `raw_payload`.
+- `Lead::formAnswers()` returns Meta `field_data` or Google `user_column_data` rows (used by `inbox/_thread`). `Lead::isTest()` = Google `is_test`.
+- Demo:
+  - `SampleGoogleLead::payload()` builds Google-format bodies (`lead_id` "sample-…"). `SampleGoogleLead::clear()` deletes only those.
+  - Commands: `google:send-sample [--count --test --key --url]` (HTTP POST) and `google:clear-samples`.
+  - Admin buttons in the inbox (`GoogleDemoController`, `leads.google.demo_tools` = `GOOGLE_DEMO_TOOLS`, default mock only). The browser POSTs the sample body to the webhook itself; a server-to-self request would deadlock `php artisan serve`.
+- Inbox live updates: `resources/js/inbox-live.js` polls `inbox.updates?since={id}` every 5s (visibleTo + filters). On new leads it re-renders the `[data-live-region]` parts from the current URL, highlights them with `.lead-new` and shows a toast (textContent only).
+- `LeadSeeder` adds 5 Google leads (`mock-google-1..5`, #5 is a test lead) after the original 30, whose rotation excludes Google so it stays unchanged.

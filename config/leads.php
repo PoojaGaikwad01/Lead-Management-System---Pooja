@@ -28,6 +28,14 @@ return [
         'access_token' => env('WA_ACCESS_TOKEN'),
     ],
 
+    // Google Ads lead form webhook (POST /webhooks/google-leads).
+    'google' => [
+        // Same value as "Key" in Google Ads → lead form → Lead delivery → Webhook integration.
+        'lead_key' => env('GOOGLE_LEAD_KEY'),
+        // Admin-only "Send sample Google lead" / "Clear samples" buttons. Default: on in mock mode only.
+        'demo_tools' => (bool) env('GOOGLE_DEMO_TOOLS', env('APP_MODE', 'mock') === 'mock'),
+    ],
+
     'ai' => [
         'provider' => env('AI_PROVIDER', 'none'),
         'api_key' => env('AI_API_KEY'),
