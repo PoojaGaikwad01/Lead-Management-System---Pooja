@@ -70,6 +70,7 @@ Standalone Laravel 13 + PostgreSQL (Supabase) + Blade + Alpine + Tailwind v4 app
   - Checks `google_key` in the body with `hash_equals` against `leads.google.lead_key` → 401. An empty key is allowed only when not live, same rule as the Meta signature.
   - Processed synchronously (the body has the whole lead) by `Services\Google\GoogleLeadProcessor` → `LeadIngestor::ingestLeadAd()`. Same idempotency and phone dedupe as Meta; a duplicate becomes a `lead_ad` message `leadgen:{lead_id}`.
   - Responds `200 {}`.
+  - CORS is on for this one route (`config/cors.php` paths) so browser-based senders (Google Ads "Send test data", online testers) don't fail with "Failed to fetch". No other route gets CORS.
 - Parsing:
   - `GoogleLeadProcessor::decode()` uses `JSON_BIGINT_AS_STRING`.
   - `attributes()` reads `user_column_data` by `column_id`. The webhook has no names, so it sets `campaign_name` = "Google campaign {id}", `form_name` = "Google form {id}", `ad_name` = "Ad group {id}".

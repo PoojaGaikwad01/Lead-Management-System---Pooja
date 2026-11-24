@@ -69,6 +69,25 @@ class GoogleLeadsTest extends TestCase
         $this->assertSame(0, Lead::count());
     }
 
+    public function test_browsers_on_other_sites_may_post_to_the_webhook_but_not_to_the_app(): void
+    {
+        // Preflight a browser sends before a cross-site JSON POST; without these headers it reports "Failed to fetch".
+        $preflight = ['HTTP_ORIGIN' => 'https://ads.google.com', 'HTTP_ACCESS_CONTROL_REQUEST_METHOD' => 'POST', 'HTTP_ACCESS_CONTROL_REQUEST_HEADERS' => 'content-type'];
+
+        $this->call('OPTIONS', '/webhooks/google-leads', [], [], [], $preflight)
+            ->assertHeader('Access-Control-Allow-Origin', '*')
+            ->assertHeader('Access-Control-Allow-Methods');
+
+        $this->call('POST', '/webhooks/google-leads', [], [], [], [
+            'HTTP_ORIGIN' => 'https://ads.google.com', 'CONTENT_TYPE' => 'application/json', 'HTTP_ACCEPT' => 'application/json',
+        ], json_encode($this->payload()))->assertOk()->assertHeader('Access-Control-Allow-Origin', '*');
+        $this->assertSame(1, Lead::count());
+
+        // Only that route: the session-based app and the Meta webhook stay same-origin.
+        $this->call('OPTIONS', '/webhooks/meta', [], [], [], $preflight)->assertHeaderMissing('Access-Control-Allow-Origin');
+        $this->call('OPTIONS', '/google/sample-lead', [], [], [], $preflight)->assertHeaderMissing('Access-Control-Allow-Origin');
+    }
+
     public function test_without_a_configured_key_live_mode_rejects_and_mock_mode_accepts(): void
     {
         config(['leads.google.lead_key' => null, 'leads.mode' => 'live']);
