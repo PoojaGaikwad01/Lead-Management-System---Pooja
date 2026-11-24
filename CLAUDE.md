@@ -82,3 +82,10 @@ Standalone Laravel 13 + PostgreSQL (Supabase) + Blade + Alpine + Tailwind v4 app
   - Admin buttons in the inbox (`GoogleDemoController`, `leads.google.demo_tools` = `GOOGLE_DEMO_TOOLS`, default mock only). The browser POSTs the sample body to the webhook itself; a server-to-self request would deadlock `php artisan serve`.
 - Inbox live updates: `resources/js/inbox-live.js` polls `inbox.updates?since={id}` every 5s (visibleTo + filters). On new leads it re-renders the `[data-live-region]` parts from the current URL, highlights them with `.lead-new` and shows a toast (textContent only).
 - `LeadSeeder` adds 5 Google leads (`mock-google-1..5`, #5 is a test lead) after the original 30, whose rotation excludes Google so it stays unchanged.
+
+## Simulation mode (current stage)
+- Real Meta / WhatsApp / Google details aren't available yet, so Render and local run `APP_MODE=mock`. Simulated content is Idyllic Services (IT services); Funky Monkey content comes later.
+- `App\Services\Simulation\LeadSimulator::run($type)` builds a fresh webhook body in the platform's exact format and runs `ProcessMetaWebhook::dispatchSync()` (same pipeline as real data). Types: `LeadSimulator::TYPES` (fb/ig lead form, messenger, ig_dm, whatsapp, agency_text, agency_excel). Google uses `SampleGoogleLead` via the browser.
+- Graph objects (lead answers, form names, profile names) and media (generated .xlsx) are put in the cache under `MetaClient::MOCK_GRAPH_KEY` / `MOCK_MEDIA_KEY`; `MetaClient` reads them first in mock mode, then the fixtures.
+- All simulated ids start with `sim-` (media dirs `sim_media_…`). `LeadSimulator::clear()` deletes those plus `sample-` Google leads. Agency simulation uses the first `AGENCY_NUMBERS` entry, else `+919900000001` for that request only.
+- Admin menu "Simulate a lead" in `inbox/index` (`simulate.store` / `simulate.clear`, 404 in live mode). Tests: `tests/Feature/SimulationTest.php`.

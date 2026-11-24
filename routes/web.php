@@ -9,7 +9,9 @@ use App\Http\Controllers\InboxController;
 use App\Http\Controllers\LeadController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\ReportController;
+use App\Http\Controllers\SimulationController;
 use App\Http\Controllers\UserController;
+use App\Services\Simulation\LeadSimulator;
 use Illuminate\Support\Facades\Route;
 
 // No public registration. Password resets are done by an admin.
@@ -52,6 +54,11 @@ Route::middleware(['auth', 'active'])->group(function () {
         // Google Ads demo tools (404 unless leads.google.demo_tools)
         Route::post('google/sample-lead', [GoogleDemoController::class, 'sampleLead'])->name('google.sample');
         Route::delete('google/sample-leads', [GoogleDemoController::class, 'clearSamples'])->name('google.samples.clear');
+
+        // Simulation mode: one fake lead per click through the real webhook pipeline (404 unless APP_MODE=mock)
+        Route::post('simulate/{type}', [SimulationController::class, 'store'])
+            ->whereIn('type', array_keys(LeadSimulator::TYPES))->middleware('throttle:30,1')->name('simulate.store');
+        Route::delete('simulate', [SimulationController::class, 'clear'])->name('simulate.clear');
 
         Route::resource('branches', BranchController::class)->except('show');
         Route::post('branches/{branch}/managers', [BranchController::class, 'assignManager'])->name('branches.managers.store');

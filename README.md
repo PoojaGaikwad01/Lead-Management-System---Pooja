@@ -66,6 +66,24 @@ Google Ads lead-form leads come in like Facebook/Instagram Lead Ads. They show i
 - Sample leads have a `lead_id` starting with `sample-`. **Clear samples** (or `php artisan google:clear-samples`) deletes only those. Real leads are never touched.
 - Edit the sample form questions in `app/Services/Google/SampleGoogleLead.php`.
 
+## Simulation mode (until the real account details are available)
+
+With `APP_MODE=mock`, admins see **Simulate a lead** at the top of the inbox list. Each item delivers one new, realistic lead for that source:
+
+| Item | What arrives |
+|---|---|
+| Facebook lead form / Instagram lead form | Lead ad with name, phone, email, city, service and budget answers, campaign/ad/form names |
+| Messenger chat / Instagram DM / WhatsApp chat | A customer message in a new chat thread (24h reply window open) |
+| Agency message | An agency WhatsApp text with 2 leads, split into one lead each |
+| Agency Excel file | An agency WhatsApp `.xlsx` with 2–4 rows, read row by row; the file is kept as an attachment |
+| Google lead form | The browser posts a Google-format lead to `/webhooks/google-leads` |
+
+- Every lead goes through the same code as a real webhook (`MetaWebhookProcessor`, `LeadIngestor`, `AgencyParser`, `GoogleLeadProcessor`): dedupe, statuses, assigning, replies (mock) and reports all behave as they will with real data.
+- Content is Idyllic Services (IT services). Edit the lists in `app/Services/Simulation/LeadSimulator.php`.
+- Simulated ids start with `sim-` (Google: `sample-`). **Clear simulated** deletes only those, including their files. Real leads are never touched.
+
+**Switching to real data:** set `APP_MODE=live` and fill in `META_*`, `WA_*`, `GOOGLE_LEAD_KEY`, `AGENCY_NUMBERS` (and `FIREBASE_CREDENTIALS_PATH` for push) on Render, then press **Clear simulated** once before switching (the menu disappears in live mode).
+
 ## Deploy on Render (Docker)
 
 Render has no native PHP runtime, so the app ships as a Docker image (`Dockerfile`, `docker/`).

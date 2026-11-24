@@ -197,7 +197,7 @@ class GoogleLeadsTest extends TestCase
     public function test_sample_button_flow_creates_a_lead_through_the_real_webhook(): void
     {
         $admin = User::factory()->admin()->create();
-        $this->actingAs($admin)->get('/inbox')->assertSee('Send sample Google lead');
+        $this->actingAs($admin)->get('/inbox')->assertSee('send-sample-google');
 
         $prepared = $this->actingAs($admin)->postJson('/google/sample-lead')->assertOk();
         $this->assertSame('/webhooks/google-leads', $prepared->json('webhook_url'));
@@ -216,13 +216,13 @@ class GoogleLeadsTest extends TestCase
     {
         $manager = User::factory()->create(['branch_id' => Branch::factory()->create()->id]);
         $this->actingAs($manager)->postJson('/google/sample-lead')->assertForbidden();
-        $this->actingAs($manager)->get('/inbox')->assertDontSee('Send sample Google lead');
+        $this->actingAs($manager)->get('/inbox')->assertDontSee('send-sample-google');
 
         config(['leads.google.demo_tools' => false]);
         $admin = User::factory()->admin()->create();
         $this->actingAs($admin)->postJson('/google/sample-lead')->assertNotFound();
         $this->actingAs($admin)->delete('/google/sample-leads')->assertNotFound();
-        $this->actingAs($admin)->get('/inbox')->assertDontSee('Send sample Google lead');
+        $this->actingAs($admin)->get('/inbox')->assertDontSee('send-sample-google');
     }
 
     public function test_clear_samples_removes_only_sample_leads(): void

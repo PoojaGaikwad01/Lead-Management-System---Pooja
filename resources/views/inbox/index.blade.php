@@ -1,11 +1,13 @@
 @php
     use App\Enums\LeadSource;
     use App\Enums\LeadStatus;
+    use App\Services\Simulation\LeadSimulator;
     use App\Support\Format;
     $isAdmin = auth()->user()->isAdmin();
     $query = request()->except('page');
     $hasExtraFilters = request()->filled('source') || request()->filled('branch_id');
     $googleDemo = $isAdmin && config('leads.google.demo_tools');
+    $simulate = $isAdmin && LeadSimulator::available();
 @endphp
 <x-layouts.app title="Inbox" :flush="true">
 <div class="flex h-full">
@@ -17,7 +19,37 @@
              @if ($googleDemo) data-sample-url="{{ route('google.sample') }}" @endif
              @class(['w-full flex-col border-r border-slate-200 bg-white sm:flex sm:w-72 sm:shrink-0 md:w-96', 'hidden' => $lead, 'flex' => ! $lead])>
         <div class="space-y-2 border-b border-slate-200 p-3">
-            @if ($googleDemo)
+            @if ($simulate)
+                {{-- Simulation mode (APP_MODE=mock): each item delivers one fake lead through the real webhook pipeline.
+                     The Google item posts to /webhooks/google-leads from the browser, exactly like Google Ads does. --}}
+                <div class="rounded-lg bg-amber-50 px-2 py-1.5" x-data="{ open: false }" @click.outside="open = false">
+                    <div class="flex items-center gap-2">
+                        <button type="button" @click="open = !open" :aria-expanded="open" class="btn btn-secondary flex-1 px-2 py-1 text-xs">
+                            Simulate a lead
+                            <svg class="size-3 transition" :class="open && 'rotate-180'" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                        <form method="POST" action="{{ route('simulate.clear') }}" onsubmit="return confirm('Delete all simulated leads? Real leads are not touched.')">
+                            @csrf @method('DELETE')
+                            <button class="px-1 text-xs text-slate-500 hover:text-rose-600 hover:underline">Clear simulated</button>
+                        </form>
+                    </div>
+                    <div x-show="open" x-cloak class="mt-1.5 grid grid-cols-2 gap-1 sm:grid-cols-1 md:grid-cols-2">
+                        @foreach (LeadSimulator::TYPES as $type => $entry)
+                            <form method="POST" action="{{ route('simulate.store', $type) }}">
+                                @csrf
+                                <button class="flex w-full items-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-left text-xs text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+                                    <span class="badge shrink-0 {{ $entry[0]->color() }}">{{ $entry[0]->short() }}</span> {{ $entry[1] }}
+                                </button>
+                            </form>
+                        @endforeach
+                        @if ($googleDemo)
+                            <button type="button" id="send-sample-google" class="flex w-full items-center gap-1.5 rounded-md bg-white px-2 py-1.5 text-left text-xs text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50">
+                                <span class="badge shrink-0 {{ LeadSource::GoogleLeadAd->color() }}">{{ LeadSource::GoogleLeadAd->short() }}</span> <span data-label>Google lead form</span>
+                            </button>
+                        @endif
+                    </div>
+                </div>
+            @elseif ($googleDemo)
                 {{-- Demo: posts a Google-format lead to /webhooks/google-leads, exactly like Google Ads does --}}
                 <div class="flex items-center gap-2 rounded-lg bg-red-50 px-2 py-1.5">
                     <button type="button" id="send-sample-google" class="btn btn-secondary flex-1 px-2 py-1 text-xs">

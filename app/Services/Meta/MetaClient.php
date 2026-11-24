@@ -11,9 +11,14 @@ use Illuminate\Support\Str;
 /**
  * Thin Graph API client. In APP_MODE=mock it never calls Meta:
  * Graph objects come from tests/fixtures/meta/graph/{id}.json, media from tests/fixtures/meta/media/{filename}.
+ * Simulated leads (LeadSimulator) put their Graph objects / media in the cache first (MOCK_GRAPH_KEY / MOCK_MEDIA_KEY).
  */
 class MetaClient
 {
+    public const MOCK_GRAPH_KEY = 'meta.mock.graph.';
+
+    public const MOCK_MEDIA_KEY = 'meta.mock.media.';
+
     public function isMock(): bool
     {
         return config('leads.mode') !== 'live';
@@ -23,6 +28,9 @@ class MetaClient
     public function get(string $id, array $query = [], ?string $token = null): array
     {
         if ($this->isMock()) {
+            if (is_array($simulated = Cache::get(self::MOCK_GRAPH_KEY.$id))) {
+                return $simulated;
+            }
             $file = base_path('tests/fixtures/meta/graph/'.basename($id).'.json');
 
             return is_file($file) ? json_decode(file_get_contents($file), true) : [];
@@ -111,7 +119,12 @@ class MetaClient
 
         if ($this->isMock()) {
             $fixture = base_path('tests/fixtures/meta/media/'.$filename);
-            Storage::put($path, is_file($fixture) ? file_get_contents($fixture) : "Mock media {$mediaId}");
+            $simulated = Cache::get(self::MOCK_MEDIA_KEY.$mediaId);
+            Storage::put($path, match (true) {
+                is_string($simulated) => base64_decode($simulated),
+                is_file($fixture) => file_get_contents($fixture),
+                default => "Mock media {$mediaId}",
+            });
 
             return $path;
         }
